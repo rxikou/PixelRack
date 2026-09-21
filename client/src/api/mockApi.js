@@ -12,8 +12,10 @@
 // has been processed.
 
 import seed from './seed.json'
+import environments from './environments.json'
 
 const KEY = 'pixelrack:cars'
+const PLACEMENTS_KEY = 'pixelrack:placements'
 
 // A real network is not instant. Keeping this delay is what forces a loading
 // state to be built now, while it is cheap, instead of discovering it is
@@ -77,4 +79,64 @@ export async function updateCar(id, input) {
 export async function deleteCar(id) {
   await delay()
   write(read().filter((row) => String(row.id) !== String(id)))
+}
+
+// Scenes (Garage, Konbini): each has a fixed number of car slots. A slot's
+// state is just which car id, if any, occupies it, keyed by environment so
+// the garage and the konbini keep independent layouts.
+
+function readPlacements() {
+  const stored = localStorage.getItem(PLACEMENTS_KEY)
+  if (!stored) return {}
+  try {
+    return JSON.parse(stored)
+  } catch {
+    localStorage.removeItem(PLACEMENTS_KEY)
+    return {}
+  }
+}
+
+function writePlacements(all) {
+  localStorage.setItem(PLACEMENTS_KEY, JSON.stringify(all))
+  return all
+}
+
+export async function listEnvironments() {
+  await delay()
+  return environments
+}
+
+export async function getPlacements(environmentId) {
+  await delay()
+  const environment = environments.find((row) => row.id === environmentId)
+  if (!environment) throw new Error('Not found')
+
+  const forEnvironment = readPlacements()[environmentId] || {}
+  const cars = read()
+
+  return Array.from({ length: environment.slots }, (_, slotIndex) => {
+    const carId = forEnvironment[slotIndex]
+    const car = carId ? (cars.find((row) => String(row.id) === String(carId)) ?? null) : null
+    return { slotIndex, car }
+  })
+}
+
+export async function setPlacement(environmentId, slotIndex, carId) {
+  await delay()
+  const all = readPlacements()
+  const forEnvironment = { ...(all[environmentId] || {}) }
+
+  if (carId == null) {
+    delete forEnvironment[slotIndex]
+  } else {
+    // A car already placed in this scene moves rather than duplicates.
+    for (const key of Object.keys(forEnvironment)) {
+      if (String(forEnvironment[key]) === String(carId)) delete forEnvironment[key]
+    }
+    forEnvironment[slotIndex] = carId
+  }
+
+  all[environmentId] = forEnvironment
+  writePlacements(all)
+  return getPlacements(environmentId)
 }

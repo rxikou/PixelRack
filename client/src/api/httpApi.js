@@ -38,3 +38,14 @@ export const updateCar = (id, input) =>
 
 export const deleteCar = (id) =>
   request(`/api/cars/${id}`, { method: 'DELETE' })
+
+export const listEnvironments = () => request('/api/environments')
+
+export const getPlacements = (environmentId) =>
+  request(`/api/environments/${environmentId}/placements`)
+
+export const setPlacement = (environmentId, slotIndex, carId) =>
+  request(`/api/environments/${environmentId}/placements/${slotIndex}`, {
+    method: 'PUT',
+    body: JSON.stringify({ carId }),
+  })

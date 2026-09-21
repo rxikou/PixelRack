@@ -34,4 +34,7 @@ export const {
   createCar,
   updateCar,
   deleteCar,
+  listEnvironments,
+  getPlacements,
+  setPlacement,
 } = implementation
