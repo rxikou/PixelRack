@@ -1,156 +1,139 @@
-# Your Project Name
+# PixelRack
 
-> **Replace this whole file.** It is a worked example of the README your project
-> will be graded from, not a file to leave as it is. Start with
-> [START-HERE.md](START-HERE.md).
+A web app that turns photos of your Hot Wheels into pixel art sprites and displays them across themed scenes: a wooden rack, a virtual garage, and a Japanese convenience store car park, for collectors who don't have shelf space to show off everything they own.
 
-One sentence saying what this does and who it is for.
-
-**Live site:** https://yourusername.github.io/your-repo-name/
-**API:** https://your-api.onrender.com/healthz
+**Live site:** pixelrack.vercel.app
+**API:** (add your Render URL once deployed)/api/health
 **Demo video:** (link)
 
-> **This deployment is running in demo mode.** The interface is real; the backend
-> is simulated in your browser so the site works without a server. See
-> [Demo mode](#demo-mode) below. Delete this quote once your API is live.
+> Photo transformation, the step that redraws your photo as pixel art, is switched off by default in this deployment. Accounts, the collection, the rack, and both scenes all work fully. See [Demo mode](#demo-mode) below for why, and how to turn it back on.
 
-![A screenshot of the main screen](docs/assets/screenshot.png)
+![The PixelRack starting page](PixelRack_Documentation/screenshots/starting-page.webp)
 
 ## What it does
 
-- Report a sighting with a place, a description and a spookiness rating
-- Browse everything reported, newest first
-- Delete a report
+- Register, sign in, and keep a personal Hot Wheels collection, scoped per account
+- Browse your whole collection on a wooden rack, sortable and filterable
+- Place cars into themed scenes, a virtual garage and a 7-Eleven Japan car park, and trigger a small click interaction
+- Upload a photo to generate a pixel-art sprite through a Gemini redraw plus a `sharp` resize step, currently switched off by default
 
 ## Built with
 
-React and Vite on the front end, Express and PostgreSQL on the back end. The
-client is on GitHub Pages, the API on (host), the database on (host).
+React and Vite on the front end, Express and PostgreSQL on the back end, with Neon Auth for accounts. The client is on Vercel, the API on Render, and the database and auth on Neon.
 
 ## Demo mode
 
-This repository can run two ways, chosen by one environment variable at **build**
-time.
+PixelRack does not ship a client-side mock backend. Every deployment, including this one, talks to a real Express API and a real Neon Postgres database. There is no `VITE_USE_MOCK_API` switch and no `localStorage` fallback, because accounts and saved placements are the whole point of the app.
 
-**Demo mode is the default.** Only the exact string `false` turns it off, so a
-forgotten or mistyped variable leaves you on the simulated backend with a visible
-notice rather than on a silently broken build.
+What is switched off by default instead is one expensive feature: photo transformation. `PIXELATION_ENABLED` on the server defaults to `false`, so a deployment that forgets to set it stays closed rather than open.
 
-| `VITE_USE_MOCK_API` | What happens |
-| --- | --- |
-| unset, or `true` | The client answers its own requests from `localStorage`. No server, no database, nothing shared between visitors. This is what the template ships with, so the GitHub Pages link works on day one. |
-| `false` | The client calls the Express API at `VITE_API_BASE_URL`, which reads and writes real PostgreSQL. |
+| `PIXELATION_ENABLED` | What happens |
+|---|---|
+| `false` (default) | `POST /api/cars/upload` returns `503` with `code: "FEATURE_DISABLED"` before the file is even accepted. The client reads this from `/api/config` at runtime and shows an "In Development" badge instead of pretending the button works. |
+| `true` | The upload endpoint calls Gemini to redraw the photo as pixel art, then `sharp` to fit it to a 96x72 sprite. Needs `GEMINI_API_KEY` and billing enabled on the Google Cloud project. |
 
-**Demo mode is a starting point and a fallback, not a finished project.** Your
-finals submission is all three pieces deployed and talking to each other. Demo
-mode is there so you can build the interface in week one before the API exists,
-and so you have something to show if a free tier is asleep during your demo.
+Everything else works with the flag off. Gemini image generation has no free tier, roughly $0.04 per upload, so leaving it off by default is what stops an open endpoint on the public internet from spending real money.
 
-GitHub Pages serves files and cannot run Node, so the API and the database can
-never live there. They go somewhere else:
+Vercel serves the client as static files and cannot run Node, so the API and the database can never live there. They go somewhere else:
 
-| Piece | Options |
-| --- | --- |
-| **API** | Render, Railway, Fly.io, Koyeb, a VPS, or [self-hosted behind a tunnel](../content/extending-your-app/11-self-hosting.md) |
-| **Database** | Neon, Supabase, Railway, Aiven, or your own PostgreSQL |
-
-`content/extending-your-app/` in your course workspace walks through all of it.
-Page 10 is the decision page if you do not know which to pick.
+| Piece | Used here |
+|---|---|
+| API | Render (`render.yaml` at the repo root) |
+| Database and auth | Neon, Postgres plus Neon Auth |
 
 ## Running it yourself
 
-**The client only, in demo mode.** No database needed.
+**Prerequisites:** Node 22.18 or newer, a Neon account (free tier is enough), and the Neon CLI (`npm i -g neon@latest`).
 
-    cd client
-    npm install
-    cp .env.example .env        # VITE_USE_MOCK_API stays true
-    npm run dev                 # http://localhost:5173
+```bash
+git clone https://github.com/rxikou/Pixel-Rack.git
+cd Pixel-Rack
 
-**The whole stack.** Needs a PostgreSQL, either local or hosted.
+cd client && npm install && cd ..
+cd server && npm install && cd ..
 
-    # 1. the database
-    docker run --name my-pg -e POSTGRES_PASSWORD=devpassword \
-      -e POSTGRES_DB=haunted -p 5432:5432 -d postgres:17
+neon login
+neon link            # writes the repo-root .env.local
+neon deploy          # provisions auth, regenerates .env.local
 
-    # 2. the API
-    cd server
-    npm install
-    cp .env.example .env        # check DATABASE_URL
-    npm run db:reset            # creates the tables and adds sample rows
-    npm run dev                 # http://localhost:3000
+cp server/.env.example server/.env
+cp client/.env.example client/.env
+# then set VITE_NEON_AUTH_URL in client/.env to match NEON_AUTH_BASE_URL in .env.local
 
-    # 3. the client, in another terminal
-    cd client
-    npm install
-    cp .env.example .env
-    # set VITE_USE_MOCK_API=false
-    npm run dev
+cd server
+npx prisma migrate deploy
+npx prisma generate
+node prisma/seed.js   # seeds the three environments: rack, garage, konbini
+cd ..
+```
+
+Two terminals:
+
+```bash
+cd server && npm run dev    # API on http://localhost:5000
+cd client && npm run dev    # UI on http://localhost:5173
+```
 
 Check the API on its own before you blame the client:
 
-    curl http://localhost:3000/healthz     # is the process alive
-    curl http://localhost:3000/readyz      # is the database reachable
-    curl http://localhost:3000/api/sightings
+```bash
+curl http://localhost:5000/api/health         # is the process alive
+curl http://localhost:5000/api/config         # which features are enabled
+curl http://localhost:5000/api/environments   # is the database reachable
+```
 
-## Environment variables
-
-None of these are committed. `.env.example` in each folder lists them with
-placeholder values.
-
-| Name | Where | What it is |
-| --- | --- | --- |
-| `DATABASE_URL` | server | PostgreSQL connection string. Contains a password |
-| `CORS_ORIGINS` | server | comma-separated origins allowed to call the API |
-| `NODE_ENV` | server | `production` on your host |
-| `PORT` | server | **set by the host**, do not set it yourself |
-| `VITE_USE_MOCK_API` | client, at build time | only `false` turns demo mode off; unset means on |
-| `VITE_API_BASE_URL` | client, at build time | your API's public URL, no trailing slash |
-
-Every `VITE_` value is compiled into the built JavaScript and is **public**.
-Never put a key, a password or a connection string in one.
 
 ## Deploying
 
-**Client, to GitHub Pages.** Already wired up in
-`.github/workflows/deploy-pages.yml`. Two one-time steps:
+**Client, to Vercel.** `client/vercel.json` already declares the Vite framework, build command, and SPA rewrite. Two one-time steps:
 
-1. **Settings > Pages > Build and deployment > Source: GitHub Actions.** Without
-   this the workflow goes green and publishes nothing.
-2. Nothing else, until your API is live. Demo mode is the default, so the first
-   deploy works on its own. When the API is up, add `VITE_USE_MOCK_API` = `false`
-   and `VITE_API_BASE_URL` under **Settings > Secrets and variables > Actions >
-   Variables**, then re-run the workflow.
+1. Import the repo in Vercel with the project root set to `client`.
+2. Add `VITE_API_URL` and `VITE_NEON_AUTH_URL` under the project's Environment Variables, then redeploy. Vercel redeploys automatically on every push to `main` after that, no workflow file needed.
 
-The repository must be **public** for Pages to serve it on a free account.
+**API, to Render.** `render.yaml` at the repo root is a Render blueprint: point Render at the repo and it reads `rootDir: server` from the file automatically. Set the variables marked `sync: false` in the file (`DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `NEON_AUTH_BASE_URL`, `NEON_AUTH_JWKS_URL`, `CORS_ORIGINS`) in the Render dashboard, since they are not committed.
 
-**API and database.** Not automated here, because most hosts deploy straight from
-your repository with no workflow at all. Point your host at the `server/` folder,
-set the environment variables in its dashboard, and run `server/db/schema.sql`
-once against the hosted database.
+Two steps here are easy to miss and both fail confusingly:
+
+- `CORS_ORIGINS` on the API must be set to the deployed client URL.
+- The deployed client URL must be added as a trusted domain in Neon Auth, or sign-in fails with an origin error while everything else looks fine.
+
+Full walkthrough: [`PixelRack_Documentation/deployment.md`](PixelRack_Documentation/deployment.md).
 
 ## Project structure
 
-    client/          React front end, built by Vite
-      src/api/       ONE interface, two implementations, chosen by a variable
-      src/components/
-    server/          Express API
-      db/            pool, schema.sql, seed.sql, and a runner for them
-    compose.yml      only if you self-host
-    docs/            your planning documents and weekly reports
+```
+PixelRack/
+├── client/                      React + Vite front end
+│   └── src/
+│       ├── api/                 API wrappers and the auth client
+│       ├── components/          Reusable UI
+│       ├── pages/                One file per route
+│       └── index.css             Tailwind @theme tokens
+├── server/                      Express API
+│   ├── prisma/                  Schema, migrations, seed
+│   └── src/
+│       ├── controllers/          Request handlers
+│       ├── middleware/           Auth, uploads, feature flags
+│       └── routes/               Route definitions
+├── PixelRack_Documentation/     Project documentation
+├── render.yaml                  Render blueprint for the API
+└── neon.ts                      Neon CLI project config
+```
 
 ## Architecture
 
-Three or four sentences, or a small diagram. Which piece talks to which, and
-where each one is hosted.
+The React client, on Vercel, calls the Express API, on Render, over HTTPS, sending a Neon Auth JWT in the `Authorization` header on every authenticated request. The API verifies that token against Neon's JWKS endpoint, then reads and writes Postgres, on Neon, through Prisma. When `PIXELATION_ENABLED` is true, an upload also calls Gemini to redraw the photo before the API serves the result back from local disk.
 
 ## What I would do next
 
-Three honest bullets. This paragraph is worth more than it looks.
+- Move uploaded images off local disk (`server/temp_uploads`) onto S3 or similar, since they do not survive a Render redeploy
+- Write the automated tests `audit.md` calls for: Vitest and React Testing Library on the client, Jest and Supertest on the server. Neither exists yet
+- Turn photo transformation back on behind a usage cap instead of leaving it fully off, so the real feature is demoable without an open-ended billing risk
 
 ## Author
 
-Your name, and a link. Course and section.
+Seane Karl S. Garcia. CS-401, APSI, Holy Angel University.
 
 ## Licence
 
-MIT, see [LICENSE](LICENSE). Put your own name in it.
+MIT
