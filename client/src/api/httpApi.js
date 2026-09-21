@@ -1,7 +1,7 @@
 // The real client. Every function here talks to YOUR Express API.
 //
-// This is the file that matters for your finals project. mockApi.js exists so
-// you can build the interface before this has anywhere to point.
+// This is the file that matters for the finals project. mockApi.js exists so
+// the interface can be built before this has anywhere to point.
 
 const BASE = import.meta.env.VITE_API_BASE_URL || ''
 
@@ -26,15 +26,15 @@ async function request(path, options) {
   return response.status === 204 ? null : response.json()
 }
 
-export const listSightings = () => request('/api/sightings')
+export const listCars = () => request('/api/cars')
 
-export const getSighting = (id) => request(`/api/sightings/${id}`)
+export const getCar = (id) => request(`/api/cars/${id}`)
 
-export const createSighting = (input) =>
-  request('/api/sightings', { method: 'POST', body: JSON.stringify(input) })
+export const createCar = (input) =>
+  request('/api/cars', { method: 'POST', body: JSON.stringify(input) })
 
-export const updateSighting = (id, input) =>
-  request(`/api/sightings/${id}`, { method: 'PUT', body: JSON.stringify(input) })
+export const updateCar = (id, input) =>
+  request(`/api/cars/${id}`, { method: 'PUT', body: JSON.stringify(input) })
 
-export const deleteSighting = (id) =>
-  request(`/api/sightings/${id}`, { method: 'DELETE' })
+export const deleteCar = (id) =>
+  request(`/api/cars/${id}`, { method: 'DELETE' })
