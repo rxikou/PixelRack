@@ -84,6 +84,7 @@ export default function ScenePage({ environmentId, title, blurb }) {
                   key={slotIndex}
                   type="button"
                   onClick={() => setPickingSlot(slotIndex)}
+                  aria-label={car ? `${car.name}, click to change` : 'Empty slot, click to add a car'}
                   className="pixel-panel flex h-24 flex-col items-center justify-center gap-1 bg-slate-800 p-2 hover:brightness-110"
                 >
                   {car ? (
@@ -98,7 +99,9 @@ export default function ScenePage({ environmentId, title, blurb }) {
                       </span>
                     </>
                   ) : (
-                    <span className="pixel-text font-pixel text-2xl text-white/60">+</span>
+                    <span className="pixel-text font-pixel text-2xl text-white/60" aria-hidden="true">
+                      +
+                    </span>
                   )}
                 </button>
               ))}

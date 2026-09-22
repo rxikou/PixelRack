@@ -1,9 +1,16 @@
 import { useState } from 'react'
 import Button from './Button.jsx'
 
-const SWATCHES = ['#f87171', '#38bdf8', '#fbbf24', '#4ade80', '#f472b6', '#a78bfa']
+const SWATCHES = [
+  { hex: '#f87171', name: 'Red' },
+  { hex: '#38bdf8', name: 'Blue' },
+  { hex: '#fbbf24', name: 'Amber' },
+  { hex: '#4ade80', name: 'Green' },
+  { hex: '#f472b6', name: 'Pink' },
+  { hex: '#a78bfa', name: 'Purple' },
+]
 
-const EMPTY_FORM = { name: '', series: '', color: SWATCHES[0] }
+const EMPTY_FORM = { name: '', series: '', color: SWATCHES[0].hex }
 
 // A photo-upload step and the pixel-art redraw belong to a later week, once
 // there is a real API to send the file to. For now a car is a name, a
@@ -58,17 +65,19 @@ export default function UploadPanel({ onAdd }) {
         className="border-2 border-bg-primary bg-bg-primary px-3 py-2 font-mono text-sm text-text-primary outline-none focus:border-accent-blue"
       />
 
-      <span className="font-mono text-xs uppercase text-text-secondary">Colour</span>
-      <div className="flex gap-2">
+      <span id="colour-label" className="font-mono text-xs uppercase text-text-secondary">
+        Colour
+      </span>
+      <div role="group" aria-labelledby="colour-label" className="flex gap-2">
         {SWATCHES.map((swatch) => (
           <button
-            key={swatch}
+            key={swatch.hex}
             type="button"
-            aria-label={`Colour ${swatch}`}
-            aria-pressed={form.color === swatch}
-            onClick={() => setForm({ ...form, color: swatch })}
-            className={`h-8 w-8 border-2 ${form.color === swatch ? 'border-white' : 'border-bg-primary'}`}
-            style={{ backgroundColor: swatch }}
+            aria-label={swatch.name}
+            aria-pressed={form.color === swatch.hex}
+            onClick={() => setForm({ ...form, color: swatch.hex })}
+            className={`h-8 w-8 border-2 ${form.color === swatch.hex ? 'border-white' : 'border-bg-primary'}`}
+            style={{ backgroundColor: swatch.hex }}
           />
         ))}
       </div>

@@ -17,6 +17,7 @@ export default function ShelfCarSlot({ car, onDelete }) {
       <Button
         variant="danger"
         onClick={() => onDelete(car.id)}
+        aria-label={`Delete ${car.name}`}
         className="self-start !px-2 !py-1 text-[10px]"
       >
         Delete
