@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// App profile only - credentials/sessions live in Neon Auth's own
+// neon_auth.user table. id matches the Neon Auth user id (JWT `sub`).
+model User {
+  id        String   @id
+  username  String   @unique
+  email     String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  cars       Car[]
+  placements Placement[]
+
+  @@map("users")
+}
+
+model Car {
+  id String @id @default(uuid())
+  userId String @map("user_id")
+  // Null until cloud image storage and the pixelation pipeline are wired up.
+  originalImageUrl String?  @map("original_image_url")
+  pixelImageUrl    String?  @map("pixel_image_url")
+  name             String
+  series           String?
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  placements Placement[]
+
+  @@map("cars")
+}
+
+model Environment {
+  // Seeded with stable string ids ("rack", "garage", "konbini") rather than
+  // UUIDs, so the client can map an environment to its scene renderer.
+  id   String @id
+  name String
+  // Null while environments are drawn in CSS; set once real art exists.
+  backgroundUrl String? @map("background_url")
+  isPremium     Boolean @default(false) @map("is_premium")
+  sortOrder     Int     @default(0) @map("sort_order")
+  // How many cars this scene can display. 0 means it shows the whole
+  // collection instead of a fixed number of slots (the default rack).
+  slots Int @default(0)
+
+  placements Placement[]
+
+  @@map("environments")
+}
+
+// Which car a user has put in which slot of a scene. One row per filled slot;
+// an empty slot simply has no row.
+model Placement {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  environmentId String   @map("environment_id")
+  slotIndex     Int      @map("slot_index")
+  carId         String   @map("car_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  car         Car         @relation(fields: [carId], references: [id], onDelete: Cascade)
+
+  // A slot holds at most one car, and a car appears at most once per scene.
+  @@unique([userId, environmentId, slotIndex])
+  @@unique([userId, environmentId, carId])
+  @@map("placements")
+}

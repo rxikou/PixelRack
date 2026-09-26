@@ -20,3 +20,8 @@ backup*.sql
 # Logs
 *.log
 npm-debug.log*
+
+# Temporary image processing files
+server/temp_uploads/*
+!server/temp_uploads/.gitkeep
+.neon
