@@ -1,125 +1,223 @@
 import { useEffect, useState } from 'react'
-import { listCars, getPlacements, setPlacement } from '../api'
-import Navbar from './Navbar.jsx'
-import PageFrame from './PageFrame.jsx'
-import DemoNotice from './DemoNotice.jsx'
-import CarPickerModal from './CarPickerModal.jsx'
+import PropTypes from 'prop-types'
+import Navbar from './Navbar'
+import Footer from './Footer'
+import Panel from './Panel'
+import CarSprite from './CarSprite'
+import CarPickerModal from './CarPickerModal'
+import { fetchCars, fetchPlacements, setPlacement } from '../api/cars'
 
-// A scene with a fixed number of car slots. Garage and Konbini both render
-// through this one template with different copy and an environmentId; the
-// slot count itself comes from src/api/environments.json, not a prop, so the
-// mock and the real API stay the single source of truth for it.
-export default function ScenePage({ environmentId, title, blurb }) {
-  const [slots, setSlots] = useState([])
+function SlotCar({ car }) {
+  return (
+    <CarSprite
+      car={car}
+      alt={car.name}
+      className="h-full w-full drop-shadow-[0_3px_3px_rgba(0,0,0,0.7)]"
+    />
+  )
+}
+SlotCar.propTypes = { car: PropTypes.object.isRequired }
+
+/**
+ * A scene with a fixed number of car slots. Slot positions are given as
+ * percentages so they stay pinned to the right spot in the artwork as the
+ * scene scales.
+ */
+function ScenePage({ environmentId, title, blurb, background, slotPositions, effect }) {
   const [cars, setCars] = useState([])
-  const [status, setStatus] = useState('loading') // loading | ready | error
-  const [error, setError] = useState(null)
+  const [placements, setPlacements] = useState([])
+  const [environment, setEnvironment] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
   const [pickingSlot, setPickingSlot] = useState(null)
+  const [activeEffect, setActiveEffect] = useState(null)
 
-  async function load() {
-    setStatus('loading')
-    setError(null)
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      try {
+        const [carList, scene] = await Promise.all([
+          fetchCars(),
+          fetchPlacements(environmentId),
+        ])
+        if (cancelled) return
+        setCars(carList)
+        setEnvironment(scene.environment)
+        setPlacements(scene.placements)
+      } catch (err) {
+        if (!cancelled) setError(err.message)
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [environmentId])
+
+  const carInSlot = (i) => placements.find((p) => p.slotIndex === i)?.car ?? null
+  const placedCarIds = placements.map((p) => p.car.id)
+
+  async function choose(car) {
+    const slot = pickingSlot
+    setPickingSlot(null)
     try {
-      const [slotRows, carRows] = await Promise.all([getPlacements(environmentId), listCars()])
-      setSlots(slotRows)
-      setCars(carRows)
-      setStatus('ready')
-    } catch (caught) {
-      setError(caught)
-      setStatus('error')
+      await setPlacement(environmentId, slot, car.id)
+      const scene = await fetchPlacements(environmentId)
+      setPlacements(scene.placements)
+    } catch (err) {
+      setError(err.message)
     }
   }
 
-  useEffect(() => {
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [environmentId])
-
-  async function handlePick(car) {
-    const slotIndex = pickingSlot
+  async function clearSlot() {
+    const slot = pickingSlot
     setPickingSlot(null)
-    const updated = await setPlacement(environmentId, slotIndex, car.id)
-    setSlots(updated)
+    try {
+      await setPlacement(environmentId, slot, null)
+      const scene = await fetchPlacements(environmentId)
+      setPlacements(scene.placements)
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
-  async function handleClear() {
-    const slotIndex = pickingSlot
-    setPickingSlot(null)
-    const updated = await setPlacement(environmentId, slotIndex, null)
-    setSlots(updated)
+  function playEffect(slotIndex) {
+    setActiveEffect(slotIndex)
+    setTimeout(() => setActiveEffect(null), 1400)
   }
 
-  const placedCarIds = slots.filter((slot) => slot.car).map((slot) => slot.car.id)
-  const pickingHasCar = slots.some((slot) => slot.slotIndex === pickingSlot && slot.car)
+  const slotCount = environment?.slots ?? slotPositions.length
 
   return (
-    <div className="min-h-screen">
-      <PageFrame />
+    <div className="flex min-h-screen flex-col">
       <Navbar />
 
-      <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8">
-        <DemoNotice />
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-6 py-8">
+        {error && (
+          <p className="pixel-panel bg-red-900/60 px-3 py-2 font-mono text-xs text-white">
+            {error}
+          </p>
+        )}
 
-        <div className="pixel-panel bg-bg-container p-4">
-          <h2 className="pixel-text font-pixel text-lg uppercase text-white">{title}</h2>
+        <Panel title={title} bodyClassName="p-3">
           <p className="mb-3 font-mono text-xs text-text-secondary">{blurb}</p>
 
-          {error && (
-            <p
-              className="pixel-panel mb-3 bg-red-900/60 px-3 py-2 font-mono text-xs text-white"
-              role="alert"
-            >
-              {error.message}
-            </p>
-          )}
+          <div className="pixel-inset relative aspect-[16/9] w-full overflow-hidden bg-slate-900">
+            {background}
 
-          {status === 'loading' && (
-            <p className="py-12 text-center font-mono text-sm text-text-secondary">Loading...</p>
-          )}
+            {isLoading ? (
+              <p className="absolute inset-0 flex items-center justify-center font-mono text-sm text-white">
+                Loading scene...
+              </p>
+            ) : (
+              slotPositions.slice(0, slotCount).map((pos, i) => {
+                const car = carInSlot(i)
+                return (
+                  <div
+                    key={i}
+                    className="absolute"
+                    style={{
+                      left: pos.left,
+                      top: pos.top,
+                      width: pos.width,
+                      height: pos.height,
+                    }}
+                  >
+                    {car ? (
+                      <button
+                        type="button"
+                        onClick={() => playEffect(i)}
+                        onDoubleClick={() => setPickingSlot(i)}
+                        title={`${car.name} - click to ${effect === 'wash' ? 'wash' : 'admire'}, double click to change`}
+                        className="relative h-full w-full cursor-pointer"
+                      >
+                        <SlotCar car={car} />
 
-          {status === 'ready' && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {slots.map(({ slotIndex, car }) => (
-                <button
-                  key={slotIndex}
-                  type="button"
-                  onClick={() => setPickingSlot(slotIndex)}
-                  aria-label={car ? `${car.name}, click to change` : 'Empty slot, click to add a car'}
-                  className="pixel-panel flex h-24 flex-col items-center justify-center gap-1 bg-slate-800 p-2 hover:brightness-110"
-                >
-                  {car ? (
-                    <>
-                      <div
-                        className="pixel-inset h-10 w-16"
-                        style={{ backgroundColor: car.color }}
-                        aria-hidden="true"
-                      />
-                      <span className="pixel-text w-full truncate font-pixel text-xs uppercase text-white">
-                        {car.name}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="pixel-text font-pixel text-2xl text-white/60" aria-hidden="true">
-                      +
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+                        {activeEffect === i && effect === 'wash' && (
+                          <>
+                            <span className="pointer-events-none absolute inset-0 overflow-hidden">
+                              <span className="animate-shine-across absolute inset-y-0 w-1/3 bg-white/50" />
+                            </span>
+                            {[10, 35, 60, 85].map((x, b) => (
+                              <span
+                                key={x}
+                                className="animate-bubble-rise pointer-events-none absolute bottom-2 h-3 w-3 rounded-full border-2 border-white/70 bg-sky-200/50"
+                                style={{ left: `${x}%`, animationDelay: `${b * 120}ms` }}
+                              />
+                            ))}
+                          </>
+                        )}
+
+                        {activeEffect === i && effect === 'sparkle' && (
+                          <>
+                            {[[15, 10], [70, 5], [45, 60], [85, 45]].map(([x, y], s) => (
+                              <span
+                                key={`${x}-${y}`}
+                                className="animate-sparkle-pop pointer-events-none absolute font-pixel text-lg text-amber-200"
+                                style={{ left: `${x}%`, top: `${y}%`, animationDelay: `${s * 140}ms` }}
+                              >
+                                +
+                              </span>
+                            ))}
+                          </>
+                        )}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setPickingSlot(i)}
+                        className="pixel-panel h-full w-full cursor-pointer bg-black/40 hover:bg-black/25"
+                      >
+                        <span className="pixel-text font-pixel text-2xl leading-none text-white/80">
+                          +
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                )
+              })
+            )}
+          </div>
+
+          <p className="mt-3 font-mono text-[11px] text-text-secondary">
+            Click an empty slot to place a car. Click a placed car to{' '}
+            {effect === 'wash' ? 'wash it' : 'admire it'}, double click to swap it out.
+          </p>
+        </Panel>
       </main>
+
+      <Footer />
 
       {pickingSlot !== null && (
         <CarPickerModal
           cars={cars}
           placedCarIds={placedCarIds}
-          canClear={pickingHasCar}
-          onPick={handlePick}
-          onClear={handleClear}
+          canClear={Boolean(carInSlot(pickingSlot))}
+          onPick={choose}
+          onClear={clearSlot}
           onClose={() => setPickingSlot(null)}
         />
       )}
     </div>
   )
 }
+
+ScenePage.propTypes = {
+  environmentId: PropTypes.string.isRequired,
+  title: PropTypes.string.isRequired,
+  blurb: PropTypes.string.isRequired,
+  background: PropTypes.node,
+  slotPositions: PropTypes.arrayOf(
+    PropTypes.shape({
+      left: PropTypes.string.isRequired,
+      top: PropTypes.string.isRequired,
+      width: PropTypes.string.isRequired,
+      height: PropTypes.string.isRequired,
+    }),
+  ).isRequired,
+  effect: PropTypes.oneOf(['wash', 'sparkle']).isRequired,
+}
+
+export default ScenePage

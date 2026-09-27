@@ -1,8 +1,0 @@
-[
-  { "id": "seed-1", "name": "Twin Mill", "series": "HW Art Cars", "color": "#f87171", "created_at": "2026-08-01T14:20:00.000Z" },
-  { "id": "seed-2", "name": "Bone Shaker", "series": "HW Art Cars", "color": "#a78bfa", "created_at": "2026-08-03T11:05:00.000Z" },
-  { "id": "seed-3", "name": "Rodger Dodger", "series": "Muscle Mania", "color": "#38bdf8", "created_at": "2026-08-05T22:40:00.000Z" },
-  { "id": "seed-4", "name": "Custom '52 Chevy", "series": "", "color": "#4ade80", "created_at": "2026-08-06T07:15:00.000Z" },
-  { "id": "seed-5", "name": "Nissan Skyline GT-R (R34)", "series": "Fast & Furious", "color": "#fbbf24", "created_at": "2026-08-08T18:30:00.000Z" },
-  { "id": "seed-6", "name": "Datsun Bluebird 510", "series": "Boulevard", "color": "#f472b6", "created_at": "2026-08-10T05:50:00.000Z" }
-]

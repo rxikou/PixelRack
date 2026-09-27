@@ -1,0 +1,204 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-pixel: 'Jersey 10', system-ui, sans-serif;
+  --font-mono: 'Roboto Mono', ui-monospace, monospace;
+
+  --color-bg-primary: #0f172a;
+  --color-bg-container: #1e293b;
+  --color-accent-blue: #38bdf8;
+  --color-accent-pink: #f472b6;
+  --color-accent-green: #4ade80;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
+
+  --spacing: 4px;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+}
+
+.pixelated {
+  image-rendering: pixelated;
+}
+
+/* Tuber-Simulator-style chunky UI. The defining traits of that look are a
+   hard black outline on every element, a bevel (light top edge, dark bottom)
+   so panels read as raised, and text outlined in black rather than shadowed. */
+.pixel-panel {
+  border: 3px solid #05070d;
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.45),
+    0 3px 0 #05070d;
+}
+
+/* Same treatment, but pressed in rather than raised. */
+.pixel-inset {
+  border: 3px solid #05070d;
+  box-shadow:
+    inset 0 3px 0 rgba(0, 0, 0, 0.55),
+    inset 0 -2px 0 rgba(255, 255, 255, 0.08);
+}
+
+.pixel-text {
+  text-shadow:
+    2px 2px 0 #05070d,
+    -1px 1px 0 #05070d,
+    1px -1px 0 #05070d,
+    -1px -1px 0 #05070d;
+}
+
+/* Chunky button: raised, and physically depresses on click. */
+.pixel-btn {
+  border: 3px solid #05070d;
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.4),
+    0 4px 0 #05070d;
+  transition:
+    transform 60ms,
+    box-shadow 60ms;
+}
+.pixel-btn:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.4),
+    0 1px 0 #05070d;
+}
+
+/* Animated background: the grid tile is 28px, so translating exactly one
+   tile loops seamlessly. Transform (not background-position) keeps it on
+   the compositor instead of repainting every frame. */
+@keyframes grid-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-28px, -28px, 0);
+  }
+}
+
+@keyframes glow-drift {
+  0%,
+  100% {
+    transform: translate3d(-6%, -3%, 0) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate3d(6%, 3%, 0) scale(1.15);
+    opacity: 0.85;
+  }
+}
+
+@keyframes float-up {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0;
+  }
+  10%,
+  80% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translate3d(0, -110vh, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes scan-sweep {
+  from {
+    transform: translate3d(0, -20vh, 0);
+  }
+  to {
+    transform: translate3d(0, 120vh, 0);
+  }
+}
+
+.animate-grid-drift {
+  animation: grid-drift 6s linear infinite;
+}
+.animate-glow-drift {
+  animation: glow-drift 18s ease-in-out infinite;
+}
+.animate-float-up {
+  animation: float-up linear infinite;
+}
+.animate-scan-sweep {
+  animation: scan-sweep 9s linear infinite;
+}
+
+/* Scene interactions: a wash (soap bubbles rising plus a shine sweep across
+   the car) and a sparkle, both built from CSS rather than sprite frames. */
+@keyframes bubble-rise {
+  0% {
+    transform: translateY(0) scale(0.6);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-64px) scale(1.1);
+    opacity: 0;
+  }
+}
+
+@keyframes shine-across {
+  from {
+    transform: translateX(-120%) skewX(-20deg);
+  }
+  to {
+    transform: translateX(320%) skewX(-20deg);
+  }
+}
+
+@keyframes sparkle-pop {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  40% {
+    transform: scale(1.2) rotate(20deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.4) rotate(45deg);
+    opacity: 0;
+  }
+}
+
+.animate-bubble-rise {
+  animation: bubble-rise 1.4s ease-out forwards;
+}
+.animate-shine-across {
+  animation: shine-across 1s ease-in-out forwards;
+}
+.animate-sparkle-pop {
+  animation: sparkle-pop 1s ease-out forwards;
+}
+
+/* Motion can be uncomfortable for some viewers; hold everything still. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-bubble-rise,
+  .animate-shine-across,
+  .animate-sparkle-pop {
+    animation: none;
+    opacity: 0;
+  }
+  .animate-grid-drift,
+  .animate-glow-drift,
+  .animate-float-up,
+  .animate-scan-sweep {
+    animation: none;
+  }
+}

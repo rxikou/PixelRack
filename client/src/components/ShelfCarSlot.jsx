@@ -1,27 +1,46 @@
-import Button from './Button.jsx'
+import PropTypes from 'prop-types'
+import CarSprite from './CarSprite'
 
-export default function ShelfCarSlot({ car, onDelete }) {
+function ShelfCarSlot({ car, onDelete }) {
   return (
-    <li className="pixel-panel flex flex-col gap-2 bg-bg-container p-3">
-      <div
-        className="pixel-inset h-16 w-full"
-        style={{ backgroundColor: car.color }}
-        aria-hidden="true"
-      />
-      <div>
-        <p className="pixel-text truncate font-pixel text-sm uppercase text-white">{car.name}</p>
-        <p className="truncate font-mono text-xs text-text-secondary">
-          {car.series || 'Uncategorized'}
-        </p>
-      </div>
-      <Button
-        variant="danger"
+    <div className="group relative flex h-14 w-full items-end justify-center sm:h-16">
+      <button
+        type="button"
         onClick={() => onDelete(car.id)}
-        aria-label={`Delete ${car.name}`}
-        className="self-start !px-2 !py-1 text-[10px]"
+        className="absolute -top-1 right-1 z-20 hidden h-4 w-4 cursor-pointer items-center justify-center rounded-full bg-red-500 text-[10px] leading-none text-bg-primary group-hover:flex"
+        aria-label={`Remove ${car.name}`}
       >
-        Delete
-      </Button>
-    </li>
+        &times;
+      </button>
+
+      <div className="pointer-events-none absolute -top-7 left-1/2 z-20 hidden -translate-x-1/2 whitespace-nowrap border-2 border-bg-container bg-bg-primary px-2 py-1 font-mono text-xs text-text-primary group-hover:block">
+        {car.name}
+        {car.series ? (
+          <span className="text-text-secondary"> &middot; {car.series}</span>
+        ) : null}
+      </div>
+
+      {/* contact shadow, so the car reads as sitting on the plank */}
+      <div className="pointer-events-none absolute bottom-0 left-1/2 h-1.5 w-[78%] -translate-x-1/2 rounded-[50%] bg-black/55 blur-[2px]" />
+
+      <CarSprite
+        car={car}
+        alt={car.name}
+        className="relative z-10 h-10 w-full drop-shadow-[0_2px_2px_rgba(0,0,0,0.6)] sm:h-12"
+      />
+    </div>
   )
 }
+
+ShelfCarSlot.propTypes = {
+  car: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    series: PropTypes.string,
+    color: PropTypes.string,
+    pixelImageUrl: PropTypes.string,
+  }).isRequired,
+  onDelete: PropTypes.func.isRequired,
+}
+
+export default ShelfCarSlot
