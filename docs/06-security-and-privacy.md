@@ -8,12 +8,12 @@ of it, and it is also why this file exists.
 
 ## Before the first push
 
-- [ ] `.gitignore` includes `.env`, and `git check-ignore -v .env` confirms it
-- [ ] `git ls-files | grep -iE '\.env$|\.pem$|id_rsa'` prints nothing
-- [ ] `.env.example` is committed, with **placeholder** values only
-- [ ] No connection string, key or password anywhere in the repository,
+- [x] `.gitignore` includes `.env`, and `git check-ignore -v .env` confirms it
+- [x] `git ls-files | grep -iE '\.env$|\.pem$|id_rsa'` prints nothing
+- [x] `.env.example` is committed, with **placeholder** values only
+- [x] No connection string, key or password anywhere in the repository,
       including in a screenshot
-- [ ] No `student.json`, and no name, student number or email of yours or anyone
+- [x] No `student.json`, and no name, student number or email of yours or anyone
       else's
 
 Deleting a file later does **not** remove it from the history. If you commit a
@@ -22,11 +22,11 @@ The rotation is the fix; the cleanup is hygiene.
 
 ## The application
 
-- [ ] Every SQL query is parameterised. Values go in the array, never into the
+- [x] Every SQL query is parameterised (handled via Prisma ORM queries). Values go in the array, never into the
       string. This is one line of defence you already know how to do
-- [ ] Input is validated **on the server**, not only in React. Length limits on
+- [x] Input is validated **on the server** (name required, file size limits in multer), not only in React. Length limits on
       every text field
-- [ ] `cors({ origin: allowedOrigins })` names your origins. Not `cors()` with no
+- [x] `cors({ origin: allowedOrigins })` names your origins (CORS_ORIGINS allowlist). Not `cors()` with no
       options, which allows every site on the internet
 - [ ] `NODE_ENV=production` on the host, and no stack trace in any response body
 - [ ] `helmet` installed, which is one line for several real protections

@@ -130,6 +130,11 @@ The React client, on Vercel, calls the Express API, on Render, over HTTPS, sendi
 - Write the automated tests `audit.md` calls for: Vitest and React Testing Library on the client, Jest and Supertest on the server. Neither exists yet
 - Turn photo transformation back on behind a usage cap instead of leaving it fully off, so the real feature is demoable without an open-ended billing risk
 
+
+## AI Credit
+
+This project was developed with AI assistance (Claude and Gemini) acting as an interactive pair-programming companion. Architectural decisions, Prisma schema constraints, user data isolation, and retro UI styling were designed, tested, and validated by the author. See [AI-USAGE.md](AI-USAGE.md) for the full audit trail, prompt records, and misstep analysis.
+
 ## Author
 
 Seane Karl S. Garcia. CS-401, APSI, Holy Angel University.

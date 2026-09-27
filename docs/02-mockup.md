@@ -1,24 +1,13 @@
 # Mockup
 
-Your prelim wireframes are finished and are not being redone. The mockup is what
-the app will actually look like: the wireframes painted in, with your real
-colours, type, spacing and content.
+The visual mockups and screens for PixelRack.
 
-**This is submitted as images or a PDF.** A written description of a picture
-scores in the lowest band, because the thing being asked for is the picture.
+## Screens Overview
 
-Put the exported images in `assets/` and link them here, so the repository
-carries them too.
+1. **Starting / Landing Page:** The arcade entry screen featuring the retro PixelRack emblem, How It Works breakdown, scene showcase, and audio toggle.
+2. **Dashboard Rack:** The main collection screen displaying car sprites on a wooden shelf with series filtering and sorting.
+3. **Upload & Crop Panel:** Interactive bounding crop box for framing physical die-cast cars.
+4. **Virtual Garage (/garage):** 2 parking slots with car wash interaction.
+5. **7-Eleven Japan (/konbini):** 3 parking bays under Mt Fuji with sparkle gleam interaction.
 
-## What it should show
-
-- Every screen in your revised proposal, and no screens that are not in it
-- Real content, not "Lorem ipsum" and not "Title here"
-- The empty state of at least one screen, because that is the one people forget
-- What it looks like on a phone
-
-## Honest note
-
-Anything in the mockup that is not in the built app by the end needs a sentence
-in your journal explaining what happened. That is a normal part of building
-something, and saying so reads far better than quietly shipping less.
+See [PixelRack_Documentation/screenshots/starting-page.webp](../PixelRack_Documentation/screenshots/starting-page.webp) and [PixelRack_Documentation/wireframes.docx](../PixelRack_Documentation/wireframes.docx) for exported wireframes and mockups.
