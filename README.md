@@ -103,21 +103,25 @@ Full walkthrough: [`PixelRack_Documentation/deployment.md`](PixelRack_Documentat
 
 ```
 PixelRack/
-├── client/                      React + Vite front end
-│   └── src/
-│       ├── api/                 API wrappers and the auth client
-│       ├── components/          Reusable UI
-│       ├── pages/                One file per route
-│       └── index.css             Tailwind @theme tokens
-├── server/                      Express API
-│   ├── prisma/                  Schema, migrations, seed
-│   └── src/
-│       ├── controllers/          Request handlers
-│       ├── middleware/           Auth, uploads, feature flags
-│       └── routes/               Route definitions
-├── PixelRack_Documentation/     Project documentation
-├── render.yaml                  Render blueprint for the API
-└── neon.ts                      Neon CLI project config
++-- client/                      React + Vite front end
+|   +-- src/
+|       +-- api/                 API wrappers and the auth client
+|       +-- components/          Reusable UI
+|       +-- context/             AuthContext
+|       +-- pages/               One file per route
+|       +-- utils/               Coordinate & display helpers
+|       +-- index.css            Tailwind design tokens
++-- server/                      Express API
+|   +-- prisma/                  PostgreSQL schema, migrations, seed
+|   +-- src/
+|       +-- controllers/         Request handlers
+|       +-- lib/                 Prisma client, loadEnv
+|       +-- middleware/          Auth verification, feature gating
+|       +-- routes/              Route definitions
++-- docs/                        Graded course documents (proposal, mockups, etc.)
++-- PixelRack_Documentation/     Complete architectural & reflection specifications
++-- render.yaml                  Render blueprint for the API
++-- neon.ts                      Neon CLI project config
 ```
 
 ## Architecture
