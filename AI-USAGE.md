@@ -91,21 +91,27 @@ However, the AI was never on autopilot. If I had accepted its initial code blind
 
 ### Code I wrote myself (at least 20% of the application)
 
-1. **User Data Scoping and Query Protection in Express Controllers (`server/src/controllers/car.controller.js` & `environment.controller.js`):**
-   When multiple people use the app, User A should never be able to see, edit, move, or delete User B's cars. AI often writes basic queries like `prisma.car.delete({ where: { id: req.params.id } })` which is a huge security hole because anyone could delete someone else's car just by guessing their ID in the URL.
-   I wrote the security scoping across every controller endpoint myself. Every database call explicitly checks `where: { id, userId: req.user.id }`. If the car does not belong to the logged-in user, the database finds nothing and returns a 404, keeping every collector's data completely private.
-   I also wrote the atomic scene placement logic using `prisma.$transaction()` to guarantee that clearing an old slot and setting a new one happen together without race conditions.
+1. **Interactive Photo Cropping Canvas (`client/src/components/UploadPanel.jsx` & `ImageCropper.jsx`):**
+   Most Hot Wheels cars are kept inside clear blister packs with printed cardboard art. If you upload the whole photo, the background remover gets confused and includes the plastic packaging and logo artwork.
+   I wrote the interactive cropping tool myself using the HTML Canvas API. I built the mouse and touch handlers that let the user drag a rectangular bounding box directly over the car body. I also wrote the coordinate calculation that extracts just that rectangular crop, converts it into an image blob, and sends it to the upload form.
 
-2. **Interactive Photo Cropping Tool (`client/src/components/UploadPanel.jsx` & `ImageCropper.jsx`):**
-   Because Hot Wheels come in carded blister packs, passing the entire photo directly to background removal failed because the plastic blister and cardboard packaging were treated as part of the car.
-   I wrote the interactive cropping component from scratch. It lets users drag a bounding box to tightly frame just the vehicle body before uploading. I handled the canvas cropping math, image blob conversions, preview cleanup, and form state myself.
+2. **Responsive Percentage Coordinate Math for Scene Parking Bays (`client/src/components/ScenePage.jsx`):**
+   When placing toy cars into the Virtual Garage (`/garage`) and 7-Eleven (`/konbini`) scenes, AI originally gave me fixed pixel values like `top: 240px; left: 320px`. The moment I tested the screen on my laptop or resized the window, the cars floated away from the parking spots.
+   I threw out the fixed pixels and wrote a responsive percentage math system. I measured the artwork and converted every parking bay into container percentages (`left%`, `top%`). That way, whether the scene is viewed on a wide monitor or a phone, the cars stay parked directly inside their bays. I also wrote the state handlers that update the scene immediately when you place a car so the interface feels snappy.
 
-3. **Retro Shelf Display, Drop Shadows, and Percentage Layouts (`client/src/components/ShelfCarSlot.jsx`, `CarPickerModal.jsx`, `ScenePage.jsx`):**
-   I wanted the app to feel like an actual physical wooden shelf where toy cars rest naturally. I hand-coded the CSS drop-shadows and wooden plank lines so the cars look grounded instead of floating.
-   For the garage and convenience store scenes, I wrote the math that positions the cars using percentage coordinates (`left%`, `top%`) relative to the background artwork. This ensures the cars stay locked inside their parking bays whether you view the app on a phone, laptop, or desktop monitor.
+3. **Retro Wooden Shelf UI and Contact Shadow Physics (`client/src/components/ShelfCarSlot.jsx` & `CarPickerModal.jsx`):**
+   I wanted PixelRack to look like a physical collector's display rather than a sterile spreadsheet. I hand-coded the CSS for the wooden shelf planks, including the dark contact drop-shadows beneath each car sprite so they look like they are physically resting on a wooden rack. I also built the modal picker, empty-slot button states, and keyboard controls so users can tab through the rack and close popups with the Escape key.
+
+4. **User Data Isolation in Express Controllers (`server/src/controllers/car.controller.js`):**
+   On the backend, I wrote the database query scoping across all car routes. Instead of trusting raw IDs from the URL, every single Prisma query explicitly checks `where: { id, userId: req.user.id }`. If a collector tries to view, edit, or delete a car that belongs to someone else, the query finds nothing and returns a 404, keeping every user's collection private.
 
 ### The AI-written part I understand best
 
-- **JWT Authentication Guard (`server/src/middleware/requireAuth.js`):**
-  This is the authentication guard middleware that protects private API routes. When a request arrives, it checks the incoming `Authorization` header for a Bearer token. It strips the Bearer prefix and passes the token to `jose.jwtVerify()`.
-  Instead of using a static shared password or secret key on the server, it queries Neon Auth's hosted JWKS endpoint to verify the cryptographic signature using public keys. If the token is expired or altered, it immediately rejects the request with an HTTP 401 Unauthorized status. If the token is valid, it extracts the user ID (`payload.sub`) and attaches it to `req.user.id` so all my controllers know exactly who is making the request.
+- **The Gemini Redraw and Sharp Quantization Pipeline (`server/src/utils/pixelate.js`):**
+  This utility function is the core of how photos become pixel art sprites. It runs as a two-stage pipeline:
+  
+  1. **Stage 1 (Gemini Redraw):** In `generatePixelArt()`, it takes the cropped photo buffer and sends it to the Gemini vision model (`gemini-2.5-flash-image`) with a specific prompt. Instead of using generic filters, the prompt instructs Gemini to redraw the car from scratch as a side-on, 16-bit game sprite with flat color blocks, dark outlines, and a transparent background.
+  
+  2. **Stage 2 (Sharp Quantization):** In `quantizeToSprite()`, the returned image is trimmed of excess transparent margins using Sharp's `.trim()`. Then, it resizes the image to exactly 96x72 pixels (`fit: 'contain'`) using a nearest-neighbor kernel so pixel edges stay crisp. Finally, it caps the color palette to 16 colors (`palette: true, colours: 16, dither: 0`). This gives the car the flat color banding of classic retro games while keeping the file size under 10KB.
+  
+  I understand how the error handling in `pixelateImage()` works as well: if Gemini fails or if credits run out, the code catches the error and cleanly falls back to local background removal so the user's upload still succeeds without crashing the server.
